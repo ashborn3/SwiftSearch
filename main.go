@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 )
 
 var (
@@ -27,8 +28,10 @@ func main() {
 		panic(err)
 	}
 
+	start := time.Now()
+
 	if _, err := os.Stat("cache.gob"); err == nil {
-		file, err := os.Open("dirMap.gob")
+		file, err := os.Open("cache.gob")
 		if err != nil {
 			panic(err)
 		}
@@ -69,7 +72,7 @@ func main() {
 	} else {
 		for _, entry := range rootDir {
 			if entry.IsDir() && entry.Name() != "mnt" {
-				fmt.Printf("Directory: %s\n", entry.Name())
+				// fmt.Printf("Directory: %s\n", entry.Name())
 				wg.Add(1)
 				go walk(homeDir + entry.Name())
 			}
@@ -78,7 +81,11 @@ func main() {
 		wg.Wait()
 	}
 
-	searchFileName := "targetFileName"
+	elapsed := time.Since(start)
+	fmt.Printf("Time taken Stage 1: %s\n", elapsed)
+
+	start = time.Now()
+	searchFileName := ".bashrc"
 
 	mu.Lock()
 	paths, found := dirMap[searchFileName]
@@ -93,6 +100,10 @@ func main() {
 		fmt.Printf("File %s not found\n", searchFileName)
 	}
 
+	elapsed = time.Since(start)
+	fmt.Printf("Time taken Stage 2: %s\n", elapsed)
+
+	start = time.Now()
 	file, err := os.Create("cache.gob")
 	if err != nil {
 		panic(err)
@@ -125,6 +136,9 @@ func main() {
 	if _, err := file.Write(ciphertext); err != nil {
 		panic(err)
 	}
+
+	elapsed = time.Since(start)
+	fmt.Printf("Time taken Stage 3: %s\n", elapsed)
 }
 
 func walk(path string) {
@@ -138,11 +152,11 @@ func walk(path string) {
 
 	for _, entry := range dirContent {
 		if entry.IsDir() {
-			fmt.Printf("Directory: %s\n", entry.Name())
+			// fmt.Printf("Directory: %s\n", entry.Name())
 			wg.Add(1)
 			go walk(path + "/" + entry.Name())
 		} else {
-			fmt.Printf("File: %s\n", entry.Name())
+			// fmt.Printf("File: %s\n", entry.Name())
 			mu.Lock()
 			dirMap[entry.Name()] = append(
 				dirMap[entry.Name()],
