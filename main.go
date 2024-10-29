@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 )
+
+var dirMap = make(map[string][]string)
 
 func main() {
 	homeDir := "/"
@@ -31,10 +34,13 @@ func walk(path string) {
 	for _, entry := range dirContent {
 		if entry.IsDir() {
 			fmt.Printf("Directory: %s\n", entry.Name())
-			// walk(path + "/" + entry.Name())
+			walk(path + "/" + entry.Name())
 		} else {
 			fmt.Printf("File: %s\n", entry.Name())
-			// Do something with the file
+			dirMap[entry.Name()] = append(
+				dirMap[entry.Name()],
+				filepath.Join(path, entry.Name()),
+			)
 		}
 	}
 }
