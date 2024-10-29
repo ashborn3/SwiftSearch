@@ -6,6 +6,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -14,6 +15,11 @@ import (
 	"time"
 )
 
+type Config struct {
+	CachePath     string `json:"cachePath"`
+	EncryptionKey string `json:"encryptionKey"`
+}
+
 var (
 	dirMap = make(map[string][]string)
 	mu     sync.Mutex
@@ -21,6 +27,12 @@ var (
 )
 
 func main() {
+	// Load configuration
+	config, err := loadConfig("config.json")
+	if err != nil {
+		panic(err)
+	}
+
 	homeDir := "/"
 
 	rootDir, err := os.ReadDir(homeDir)
@@ -30,8 +42,8 @@ func main() {
 
 	start := time.Now()
 
-	if _, err := os.Stat("cache.gob"); err == nil {
-		file, err := os.Open("cache.gob")
+	if _, err := os.Stat(config.CachePath); err == nil {
+		file, err := os.Open(config.CachePath)
 		if err != nil {
 			panic(err)
 		}
@@ -42,7 +54,7 @@ func main() {
 			panic(err)
 		}
 
-		key := []byte("a very very very very secret key") // 32 bytes for AES-256
+		key := []byte(config.EncryptionKey)
 		block, err := aes.NewCipher(key)
 		if err != nil {
 			panic(err)
@@ -72,7 +84,6 @@ func main() {
 	} else {
 		for _, entry := range rootDir {
 			if entry.IsDir() && entry.Name() != "mnt" {
-				// fmt.Printf("Directory: %s\n", entry.Name())
 				wg.Add(1)
 				go walk(homeDir + entry.Name())
 			}
@@ -104,7 +115,7 @@ func main() {
 	fmt.Printf("Time taken Stage 2: %s\n", elapsed)
 
 	start = time.Now()
-	file, err := os.Create("cache.gob")
+	file, err := os.Create(config.CachePath)
 	if err != nil {
 		panic(err)
 	}
@@ -116,7 +127,7 @@ func main() {
 		panic(err)
 	}
 
-	key := []byte("a very very very very secret key") // 32 bytes for AES-256
+	key := []byte(config.EncryptionKey)
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		panic(err)
@@ -152,11 +163,9 @@ func walk(path string) {
 
 	for _, entry := range dirContent {
 		if entry.IsDir() {
-			// fmt.Printf("Directory: %s\n", entry.Name())
 			wg.Add(1)
 			go walk(path + "/" + entry.Name())
 		} else {
-			// fmt.Printf("File: %s\n", entry.Name())
 			mu.Lock()
 			dirMap[entry.Name()] = append(
 				dirMap[entry.Name()],
@@ -165,4 +174,20 @@ func walk(path string) {
 			mu.Unlock()
 		}
 	}
+}
+
+func loadConfig(path string) (*Config, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var config Config
+	decoder := json.NewDecoder(file)
+	if err := decoder.Decode(&config); err != nil {
+		return nil, err
+	}
+
+	return &config, nil
 }
