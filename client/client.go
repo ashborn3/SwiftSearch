@@ -35,7 +35,9 @@ func main() {
 		case "recache":
 			recache(config)
 		case "status":
-			// Get the status of the server
+			status(config)
+		default:
+			fmt.Println("Invalid Command")
 		}
 	}
 }
@@ -108,4 +110,21 @@ func recache(config *Config) {
 	}
 
 	fmt.Println("Files recached successfully")
+}
+
+func status(config *Config) {
+	url := fmt.Sprintf("http://%s:%d/status", config.Ip, config.Port)
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println("Error sending status request:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Failed to get server status, status code:", resp.StatusCode)
+		return
+	}
+
+	fmt.Println("Server status: OK")
 }
