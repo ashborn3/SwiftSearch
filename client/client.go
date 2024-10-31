@@ -33,7 +33,7 @@ func main() {
 		case "search":
 			search(config, args[1])
 		case "recache":
-			// Recache the cache
+			recache(config)
 		case "status":
 			// Get the status of the server
 		}
@@ -91,4 +91,21 @@ func search(config *Config, query string) {
 	for _, result := range response.Result {
 		fmt.Println(result)
 	}
+}
+
+func recache(config *Config) {
+	url := fmt.Sprintf("http://%s:%d/recache", config.Ip, config.Port)
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println("Error sending recache request:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Failed to recache files, status code:", resp.StatusCode)
+		return
+	}
+
+	fmt.Println("Files recached successfully")
 }
