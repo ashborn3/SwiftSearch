@@ -15,7 +15,6 @@ type Response struct {
 }
 
 func main() {
-
 	config, err := loadConfig("config.json")
 	if err != nil {
 		fmt.Println("Error loading config file")
