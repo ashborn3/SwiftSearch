@@ -58,13 +58,13 @@ func server(ctx context.Context, cancel context.CancelFunc, config *Config) {
 
 		resultArr, exists := dirMap[request.FileName]
 		if exists {
-			log.Printf("File Found: %v", resultArr)
+			log.Printf("File Found\n")
 			c.JSON(http.StatusOK, gin.H{
 				"message": "Found",
 				"result":  resultArr,
 			})
 		} else {
-			log.Printf("File Not Found")
+			log.Printf("File Not Found\n")
 			c.JSON(http.StatusOK, gin.H{
 				"message": "Not Found",
 				"result":  []string{},

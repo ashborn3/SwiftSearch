@@ -13,7 +13,6 @@ func main() {
 		fmt.Printf("Error loading config: %v\n", err)
 		return
 	}
-	fmt.Println(config)
 
 	deserializeCache(config)
 
