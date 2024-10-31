@@ -12,6 +12,12 @@ import (
 func server(ctx context.Context, cancel context.CancelFunc, config *Config) {
 	r := gin.Default()
 
+	r.GET("/status", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Server is running",
+		})
+	})
+
 	r.GET("/recache", func(c *gin.Context) {
 		log.Printf("Recaching...")
 		err := deserializeCache(config)
