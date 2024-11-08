@@ -60,7 +60,7 @@ func deserializeCache(config *Config) error {
 		}
 	} else {
 		for _, entry := range rootDir {
-			if entry.IsDir() && entry.Name() != "mnt" {
+			if entry.IsDir() && entry.Name() != "mnt" && entry.Name() != "Windows" {
 				wg.Add(1)
 				go walk(config.HomePath + entry.Name())
 			}
