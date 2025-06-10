@@ -1,4 +1,4 @@
-package main
+package fs
 
 import (
 	"fmt"
@@ -8,13 +8,13 @@ import (
 )
 
 var (
-	dirMap = make(map[string][]string)
-	mu     sync.Mutex
-	wg     sync.WaitGroup
+	DirMap = make(map[string][]string)
+	Mu     sync.Mutex
+	Wg     sync.WaitGroup
 )
 
-func walk(path string) {
-	defer wg.Done()
+func Walk(path string) {
+	defer Wg.Done()
 
 	dirContent, err := os.ReadDir(path)
 	if err != nil {
@@ -24,15 +24,15 @@ func walk(path string) {
 
 	for _, entry := range dirContent {
 		if entry.IsDir() {
-			wg.Add(1)
-			go walk(path + "/" + entry.Name())
+			Wg.Add(1)
+			go Walk(path + "/" + entry.Name())
 		} else {
-			mu.Lock()
-			dirMap[entry.Name()] = append(
-				dirMap[entry.Name()],
+			Mu.Lock()
+			DirMap[entry.Name()] = append(
+				DirMap[entry.Name()],
 				filepath.Join(path, entry.Name()),
 			)
-			mu.Unlock()
+			Mu.Unlock()
 		}
 	}
 }
