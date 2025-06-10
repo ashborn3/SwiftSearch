@@ -1,4 +1,4 @@
-package main
+package cache
 
 import (
 	"bytes"
@@ -10,10 +10,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"swift_search/internal/config"
+	"swift_search/internal/fs"
 	"time"
 )
 
-func deserializeCache(config *Config) error {
+func DeserializeCache(config *config.Config) error {
 	rootDir, err := os.ReadDir(config.HomePath)
 	if err != nil {
 		return err
@@ -55,24 +57,24 @@ func deserializeCache(config *Config) error {
 
 		buffer := bytes.NewBuffer(plaintext)
 		decoder := gob.NewDecoder(buffer)
-		if err := decoder.Decode(&dirMap); err != nil {
+		if err := decoder.Decode(&fs.DirMap); err != nil {
 			return err
 		}
 	} else {
 		for _, entry := range rootDir {
 			if entry.IsDir() && entry.Name() != "mnt" && entry.Name() != "Windows" {
-				wg.Add(1)
-				go walk(config.HomePath + entry.Name())
+				fs.Wg.Add(1)
+				go fs.Walk(config.HomePath + entry.Name())
 			}
 		}
 
-		wg.Wait()
+		fs.Wg.Wait()
 	}
 
 	return nil
 }
 
-func serializeCache(config *Config) error {
+func SerializeCache(config *config.Config) error {
 	file, err := os.Create(config.CachePath)
 	if err != nil {
 		return err
@@ -81,7 +83,7 @@ func serializeCache(config *Config) error {
 
 	plaintext := new(bytes.Buffer)
 	encoder := gob.NewEncoder(plaintext)
-	if err := encoder.Encode(dirMap); err != nil {
+	if err := encoder.Encode(fs.DirMap); err != nil {
 		return err
 	}
 
@@ -109,15 +111,15 @@ func serializeCache(config *Config) error {
 	return nil
 }
 
-func syncCacheToDisk(ctx context.Context, syncTime int) {
-	cacheTicker := time.NewTicker(time.Duration(syncTime) * time.Minute)
+func SyncCacheToDisk(ctx context.Context, config *config.Config) {
+	cacheTicker := time.NewTicker(time.Duration(config.SyncTime) * time.Minute)
 	defer cacheTicker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-cacheTicker.C:
-			if err := serializeCache(config); err != nil {
+			if err := SerializeCache(config); err != nil {
 				fmt.Printf("Error serializing cache: %v\n", err)
 			}
 		}
