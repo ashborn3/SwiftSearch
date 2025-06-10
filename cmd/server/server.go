@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"swift_search/internal/cache"
 	"swift_search/internal/config"
 	"swift_search/internal/router"
@@ -20,7 +21,11 @@ func main() {
 		panic(err)
 	}
 
-	cache.DeserializeCache(server.Config)
+	err = cache.DeserializeCache(server.Config)
+	if err != nil {
+		log.Printf("Error during deserialization: %s", err.Error())
+		panic(err)
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 
