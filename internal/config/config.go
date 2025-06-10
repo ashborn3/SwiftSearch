@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ type Config struct {
 	SyncTime      int    `json:"syncTime"`
 }
 
-func loadConfig(path string) (*Config, error) {
+func LoadConfig(path string) (*Config, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err

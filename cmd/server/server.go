@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"swift_search/internal/config"
 )
 
 func main() {
 	fmt.Printf("Server Started!\n")
 
-	config, err := loadConfig("config.json")
+	config, err := config.LoadConfig("config.json")
 	if err != nil {
 		fmt.Printf("Error loading config: %v\n", err)
 		return

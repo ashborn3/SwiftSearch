@@ -7,7 +7,12 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"swift_search/internal/config"
 )
+
+type Client struct {
+	Config *config.Config
+}
 
 type Response struct {
 	Message string   `json:"message"`
@@ -15,10 +20,9 @@ type Response struct {
 }
 
 func main() {
-	config, err := loadConfig("config.json")
+	client, err := InitClient()
 	if err != nil {
-		fmt.Println("Error loading config file")
-		return
+		panic(err)
 	}
 
 	args := os.Args[1:]
@@ -28,21 +32,31 @@ func main() {
 	} else {
 		switch args[0] {
 		case "kill":
-			kill(config)
+			client.kill()
 		case "search":
-			search(config, args[1])
+			client.search(args[1])
 		case "recache":
-			recache(config)
+			client.recache()
 		case "status":
-			status(config)
+			client.status()
 		default:
 			fmt.Println("Invalid Command")
 		}
 	}
 }
 
-func kill(config *Config) {
-	url := fmt.Sprintf("http://%s:%d/shutdown", config.Ip, config.Port)
+func InitClient() (*Client, error) {
+	config, err := config.LoadConfig("config.json")
+	if err != nil {
+		fmt.Println("Error loading config file")
+		return nil, err
+	}
+
+	return &Client{Config: config}, nil
+}
+
+func (cl *Client) kill() {
+	url := fmt.Sprintf("http://%s:%d/shutdown", cl.Config.Ip, cl.Config.Port)
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println("Error sending shutdown request:", err)
@@ -58,8 +72,8 @@ func kill(config *Config) {
 	fmt.Println("Server shutdown successfully")
 }
 
-func search(config *Config, query string) {
-	url := fmt.Sprintf("http://%s:%d/search", config.Ip, config.Port)
+func (cl *Client) search(query string) {
+	url := fmt.Sprintf("http://%s:%d/search", cl.Config.Ip, cl.Config.Port)
 	payload := fmt.Sprintf(`{"file_name": "%s"}`, query)
 	resp, err := http.Post(url, "application/json", strings.NewReader(payload))
 	if err != nil {
@@ -94,8 +108,8 @@ func search(config *Config, query string) {
 	}
 }
 
-func recache(config *Config) {
-	url := fmt.Sprintf("http://%s:%d/recache", config.Ip, config.Port)
+func (cl *Client) recache() {
+	url := fmt.Sprintf("http://%s:%d/recache", cl.Config.Ip, cl.Config.Port)
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println("Error sending recache request:", err)
@@ -111,8 +125,8 @@ func recache(config *Config) {
 	fmt.Println("Files recached successfully")
 }
 
-func status(config *Config) {
-	url := fmt.Sprintf("http://%s:%d/status", config.Ip, config.Port)
+func (cl *Client) status() {
+	url := fmt.Sprintf("http://%s:%d/status", cl.Config.Ip, cl.Config.Port)
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println("Error sending status request:", err)
