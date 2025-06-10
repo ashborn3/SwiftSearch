@@ -1,15 +1,18 @@
-package main
+package router
 
 import (
 	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"swift_search/internal/cache"
+	"swift_search/internal/config"
+	"swift_search/internal/fs"
 
 	"github.com/gin-gonic/gin"
 )
 
-func server(ctx context.Context, cancel context.CancelFunc, config *Config) {
+func Server(ctx context.Context, cancel context.CancelFunc, config *config.Config) {
 	r := gin.Default()
 
 	r.GET("/status", func(c *gin.Context) {
@@ -20,7 +23,7 @@ func server(ctx context.Context, cancel context.CancelFunc, config *Config) {
 
 	r.GET("/recache", func(c *gin.Context) {
 		log.Printf("Recaching...")
-		err := deserializeCache(config)
+		err := cache.SerializeCache(config)
 		if err != nil {
 			log.Printf("Recaching Failed: %s", err)
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -56,7 +59,7 @@ func server(ctx context.Context, cancel context.CancelFunc, config *Config) {
 
 		log.Println("Received file name:", request.FileName)
 
-		resultArr, exists := dirMap[request.FileName]
+		resultArr, exists := fs.DirMap[request.FileName]
 		if exists {
 			log.Printf("File Found\n")
 			c.JSON(http.StatusOK, gin.H{
