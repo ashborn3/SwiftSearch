@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"swift_search/internal/cache"
 	"swift_search/internal/config"
+	"swift_search/internal/router"
 )
 
 type Server struct {
@@ -13,13 +15,18 @@ type Server struct {
 func main() {
 	fmt.Printf("Server Started!\n")
 
-	deserializeCache(config)
+	server, err := InitServer()
+	if err != nil {
+		panic(err)
+	}
+
+	cache.DeserializeCache(server.Config)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	go syncCacheToDisk(ctx, config)
+	go cache.SyncCacheToDisk(ctx, server.Config)
 
-	server(ctx, cancel, config)
+	router.Server(ctx, cancel, server.Config)
 }
 
 func InitServer() (*Server, error) {
