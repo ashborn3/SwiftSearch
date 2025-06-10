@@ -109,8 +109,8 @@ func serializeCache(config *Config) error {
 	return nil
 }
 
-func syncCacheToDisk(ctx context.Context, config *Config) {
-	cacheTicker := time.NewTicker(time.Duration(config.SyncTime) * time.Minute)
+func syncCacheToDisk(ctx context.Context, syncTime int) {
+	cacheTicker := time.NewTicker(time.Duration(syncTime) * time.Minute)
 	defer cacheTicker.Stop()
 	for {
 		select {
