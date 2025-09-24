@@ -50,7 +50,7 @@ func walkDir(path string, wg *sync.WaitGroup) {
 				return
 			}
 		case <-time.After(1 * time.Second):
-			fmt.Printf("Timeout reading directory: %s\n", path)
+			// fmt.Printf("Timeout reading directory: %s\n", path)
 			return
 		}
 		// fmt.Printf("Scanning: %s, entries: %d\n", path, len(dirContent))
