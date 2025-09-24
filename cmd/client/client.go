@@ -15,8 +15,13 @@ type Client struct {
 }
 
 type Response struct {
-	Message string   `json:"message"`
-	Result  []string `json:"result"`
+	Message string     `json:"message"`
+	Result  []FileMeta `json:"result"`
+}
+
+type FileMeta struct {
+	Path    string
+	ModTime int64
 }
 
 func main() {
@@ -104,7 +109,7 @@ func (cl *Client) search(query string) {
 	fmt.Println("Result Count: ", len(response.Result))
 	fmt.Println("Results:")
 	for _, result := range response.Result {
-		fmt.Println(result)
+		fmt.Println(result.Path)
 	}
 }
 
