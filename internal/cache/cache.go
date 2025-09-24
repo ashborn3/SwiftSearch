@@ -70,11 +70,18 @@ func DeserializeCache(config *config.Config) error {
 
 		fs.Wg.Wait()
 	}
-
 	return nil
 }
 
 func SerializeCache(config *config.Config) error {
+	if _, err := os.Stat(config.CachePath); err == nil {
+		if err := os.Remove(config.CachePath); err != nil {
+			return err
+		}
+	}
+
+	refreshCache(config)
+
 	file, err := os.Create(config.CachePath)
 	if err != nil {
 		return err
@@ -119,9 +126,33 @@ func SyncCacheToDisk(ctx context.Context, config *config.Config) {
 		case <-ctx.Done():
 			return
 		case <-cacheTicker.C:
+			// Periodically refresh DirMap before serializing cache
+			start := time.Now()
+			refreshCache(config)
+			elapsed := time.Since(start)
+			fmt.Printf("refreshCache took %s\n", elapsed)
 			if err := SerializeCache(config); err != nil {
 				fmt.Printf("Error serializing cache: %v\n", err)
 			}
 		}
 	}
+}
+
+func refreshCache(config *config.Config) {
+	fs.Mu.Lock()
+	fs.DirMap = make(map[string][]string)
+	fs.Mu.Unlock()
+
+	rootDir, err := os.ReadDir(config.HomePath)
+	if err != nil {
+		fmt.Printf("Error reading root directory: %v\n", err)
+		return
+	}
+	for _, entry := range rootDir {
+		if entry.IsDir() && entry.Name() != "mnt" && entry.Name() != "Windows" {
+			fs.Wg.Add(1)
+			go fs.Walk(config.HomePath + entry.Name())
+		}
+	}
+	fs.Wg.Wait()
 }
