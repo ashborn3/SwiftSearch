@@ -16,8 +16,7 @@ import (
 )
 
 func DeserializeCache(config *config.Config) error {
-	rootDir, err := os.ReadDir(config.HomePath)
-	if err != nil {
+	if _, err := os.Stat(config.HomePath); err != nil {
 		return err
 	}
 
@@ -61,14 +60,7 @@ func DeserializeCache(config *config.Config) error {
 			return err
 		}
 	} else {
-		for _, entry := range rootDir {
-			if entry.IsDir() && entry.Name() != "mnt" && entry.Name() != "Windows" {
-				fs.Wg.Add(1)
-				go fs.Walk(config.HomePath + entry.Name())
-			}
-		}
-
-		fs.Wg.Wait()
+		fs.Walk(config.HomePath)
 	}
 	return nil
 }
@@ -140,19 +132,7 @@ func SyncCacheToDisk(ctx context.Context, config *config.Config) {
 
 func refreshCache(config *config.Config) {
 	fs.Mu.Lock()
-	fs.DirMap = make(map[string][]string)
+	fs.DirMap = make(map[string][]fs.FileMeta)
 	fs.Mu.Unlock()
-
-	rootDir, err := os.ReadDir(config.HomePath)
-	if err != nil {
-		fmt.Printf("Error reading root directory: %v\n", err)
-		return
-	}
-	for _, entry := range rootDir {
-		if entry.IsDir() && entry.Name() != "mnt" && entry.Name() != "Windows" {
-			fs.Wg.Add(1)
-			go fs.Walk(config.HomePath + entry.Name())
-		}
-	}
-	fs.Wg.Wait()
+	fs.Walk(config.HomePath)
 }

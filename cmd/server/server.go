@@ -14,8 +14,6 @@ type Server struct {
 }
 
 func main() {
-	fmt.Printf("Server Started!\n")
-
 	server, err := InitServer()
 	if err != nil {
 		panic(err)
@@ -30,6 +28,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	go cache.SyncCacheToDisk(ctx, server.Config)
+
+	fmt.Printf("Server Starting!\n")
 
 	router.Server(ctx, cancel, server.Config)
 }
